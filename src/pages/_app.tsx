@@ -19,7 +19,7 @@ import AppNavbar from "../components/App/AppNavbar";
 
 //css
 import '../style/navbar.css'
-import '../style/AppNavbar.css'
+import '../style/Appnavbar.css'
 
 const { chains, publicClient } = configureChains(
     [zkSync],

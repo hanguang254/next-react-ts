@@ -26,7 +26,7 @@ npm install web3
 npm install bootstrap@5.3.0-alpha1
 ```
 
-## rainbow 配置fs模块
+##  [rainbowkit官网配置](https://www.rainbowkit.com/docs/installation)
 ```
 安装
 npm install buffer crypto-browserify stream-browserify
