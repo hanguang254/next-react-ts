@@ -1,0 +1,14 @@
+.app-navbar{
+    background-color: #252954;
+    height: 60px;
+}
+.app-link-router{
+
+    
+}
+.app-link-router a{
+    color: white;
+    text-decoration: none; 
+    padding: 10px;
+    font-size: 20px;
+}

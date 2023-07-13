@@ -1,0 +1,32 @@
+*{
+    margin: 0;
+}
+
+.navbar{
+    background-color: #252954;
+    justify-content: space-between;
+}
+.navbarlogo {
+    /* margin-right: auto; 图标logo靠左 */
+    margin-left: 20px;
+}
+
+.link-router {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex: 1;
+}
+  
+.link-router a {
+    margin-right: 20px;
+    color: white;
+    text-decoration: none;  /* 去掉下划线 */
+    padding: 30px;
+    font-size: 20px;
+}
+
+.wallet {
+    /* margin-left: auto; 让钱包靠右 */
+    margin-right: 20px;
+}
