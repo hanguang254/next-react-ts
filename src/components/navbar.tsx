@@ -28,9 +28,9 @@ export default function navbar() {
             
             <Box className='link-router'>
                 <Box>
-                    <Link href="/">Airdrop</Link>
-                    <Link href="/pagetwo">IDO</Link>
-                    <Link href='/pagethree'>POOL</Link>
+                    <Link href="/">批量转账</Link>
+                    <Link href="/pagetwo">02</Link>
+                    <Link href='/pagethree'>03</Link>
                 </Box>  
             </Box>
             <Box className='wallet' >
