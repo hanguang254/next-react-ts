@@ -10,7 +10,7 @@ import {
   darkTheme
 } from '@rainbow-me/rainbowkit';
 import { configureChains, createConfig, WagmiConfig } from 'wagmi';
-import { zkSync, zkSyncTestnet ,goerli} from 'wagmi/chains';
+import { zkSync, zkSyncTestnet} from 'wagmi/chains';
 import { publicProvider } from 'wagmi/providers/public';
 
 import Layout from './layout';
@@ -22,7 +22,7 @@ import '../style/navbar.css'
 import '../style/Appnavbar.css'
 
 const { chains, publicClient } = configureChains(
-    [zkSync, zkSyncTestnet,goerli],
+    [ zkSyncTestnet],
     [
       // alchemyProvider({ apiKey: process.env.ALCHEMY_ID }),
       publicProvider()

@@ -34,8 +34,8 @@ export default function AppNavbar(props: AppNavbarProps){
             <Box className='app-link-router'>
                 <Box>
                     <Link href="/">批量转账</Link>
-                    <Link href="/pagetwo">待开发</Link>
-                    <Link href='/pagethree'>待开发</Link>
+                    <Link href="/pagetwo">02</Link>
+                    <Link href='/pagethree'>03</Link>
                 </Box>  
             </Box>
             <Box className='app-wallet' >
