@@ -10,7 +10,7 @@ import {
   darkTheme
 } from '@rainbow-me/rainbowkit';
 import { configureChains, createConfig, WagmiConfig } from 'wagmi';
-import { zkSync, mainnet } from 'wagmi/chains';
+import { zkSync, zkSyncTestnet ,goerli} from 'wagmi/chains';
 import { publicProvider } from 'wagmi/providers/public';
 
 import Layout from './layout';
@@ -22,7 +22,7 @@ import '../style/navbar.css'
 import '../style/Appnavbar.css'
 
 const { chains, publicClient } = configureChains(
-    [zkSync],
+    [zkSync, zkSyncTestnet,goerli],
     [
       // alchemyProvider({ apiKey: process.env.ALCHEMY_ID }),
       publicProvider()
@@ -71,7 +71,7 @@ export default function Myapp({ Component, pageProps }: MyappProps) {
               accentColor:'linear-gradient(270deg, rgb(51, 212, 250) 0%, rgb(23, 243, 221) 100%)',
               accentColorForeground:'black'
           })}
-          initialChain={zkSync}>
+          initialChain={zkSyncTestnet}>
             {isSmallScreen ? <AppNavbar walletName={walletName} /> :<Navbar /> }
             <Layout>
               <Component {...pageProps} />
