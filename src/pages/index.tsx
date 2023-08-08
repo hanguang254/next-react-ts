@@ -1,4 +1,4 @@
-import React, { Component, use} from 'react'
+import React, { Component} from 'react'
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 
@@ -8,10 +8,10 @@ import { useContractWrite } from 'wagmi';
 import TranABI from '../abi/TransferABI.json';
 
 import { Input ,Button,notification} from 'antd';
-import { SmileOutlined } from '@ant-design/icons';
+import { SmileOutlined,CloseSquareOutlined } from '@ant-design/icons';
 import type { NotificationPlacement } from 'antd/es/notification/interface';
 
-import { useState,useEffect } from 'react';
+import { useState,useEffect ,useRef} from 'react';
 import axios from 'axios';
 
 const { TextArea } = Input;
@@ -39,6 +39,9 @@ export default function Index() {
 
   const [transferhash,settransferhash] =useState<any>();//交易hash
   const [transtatus,setTranstatus] = useState<any>(undefined); // 交易状态
+
+  const [loading, setLoading] = useState<boolean>(false); //按钮加载状态
+  const [addressfalse, setaddressfalse] = useState<boolean>(false); //地址错误提示
   //金额输入框
   const handleChange = (event:any): void => {
     setamountinput(true);
@@ -55,6 +58,21 @@ export default function Index() {
     const addresses = inputValue.split('\n').map((address:any) => address.trim());
     setaddesslist(addresses);
   }
+  //错误清空所有输入框
+  useEffect(() => {
+    if(addressfalse){
+      if(document.getElementById('transfer-address')as HTMLInputElement){
+          const a = document.getElementById('transfer-address')as HTMLInputElement;
+          const b = document.getElementById('transfer-amount')as HTMLInputElement;
+          a.value = '';
+          b.value = '';
+          setValue('');
+          setaddesslist([]);
+          setaddressfalse(false);
+      }
+    }
+    
+  },[addressfalse])
 
   function isEthAddressValid() {
     // 检查地址与金额是否为空
@@ -68,7 +86,13 @@ export default function Index() {
     const regex = /^0x[0-9a-fA-F]{40}$/;
     for(let i =0;i<addresslist.length;i++){
       if (!regex.test(addresslist[i])) {
-          console.log('地址错误');
+          setaddressfalse(true);
+          notification.open({
+            message: '地址错误',
+            description: '请输入正确的以太坊地址',
+            icon: <CloseSquareOutlined style={{ color: '#108ee9' }}/>,
+          })
+          
       }
     }
 
@@ -101,7 +125,7 @@ export default function Index() {
   },[])
 
   //合约地址
-  const contract = '0x898b822DbB29f9851798e35B6c088282011a6AeC';
+  const contract = '0x3B9fe8f1b19BBB6a2c5C0084f8D59bB0b1C487B1';
   // 处理合约地址两端显示
   const viweaddress = (contract:string)=>{
       if(mobilewidth){
@@ -119,39 +143,44 @@ export default function Index() {
         setTranstatus(status.result.status);
       };
       
-      setTimeout(fetchData, 2000)
+      setTimeout(fetchData,1000);
     }
   }, [transferhash]);
 
   useEffect(() => {
+    const url = `https://goerli.explorer.zksync.io/tx/${transferhash}`;
     if (transtatus === 'pending') {
       notification.open({
         message: '交易通知',
-        description: '交易已提交，等待确认',
+        description: <a href={url} target='_bank' style={{textDecoration:'none'}}>
+                      交易已提交，等待确认</a>,
         icon: <SmileOutlined style={{ color: '#108ee9' }} />,
       });
     } else if (transtatus === 'included') {
       notification.open({
         message: '交易通知',
-        description: '交易已确认',
+        description: <a href={url} target='_bank' style={{textDecoration:'none'}}>
+                      交易已确认,点击查看详情！</a>,
         icon: <SmileOutlined style={{ color: '#108ee9' }} />,
       });
     } else if (transtatus === 'failed') {
       notification.open({
         message: '交易通知',
-        description: '交易失败，请检查余额是否充足',
-        icon: <SmileOutlined style={{ color: '#108ee9' }} />,
+        description: '交易失败，请检测授权额度余额是否充足',
+        icon: <CloseSquareOutlined style={{ color: '#108ee9' }}/>,
       });
     }
     setTranstatus(undefined);
-  }, [transtatus]);
+    setValue('');
+    setaddesslist([]);
+  }, [transtatus,transferhash]);
   
 
   
   //获取交易信息
   async function getTransaction(hash:any){
     const url:string = `https://testnet.era.zksync.dev/zks_getTransactionDetails`;
-    console.log(url);
+    // console.log(url);
     const headers :any = {
       "content-type": "application/json",
     }
@@ -163,13 +192,12 @@ export default function Index() {
     }
 
     const res =await axios.post(url,data,{headers})
-    console.log(res);
+    console.log(res.data);
     return  res.data;
   }
   
 
   //转账函数 zksync-web3
-  
   async function Transfer(){
     
     const web3provider = new Web3Provider(window.ethereum)
@@ -189,12 +217,18 @@ export default function Index() {
     try{
       isEthAddressValid();
       if(addressinput&&amountinput){
+        //按钮点击加载状态
+        setLoading(true);
+
         const hash:any =await Transfer();
         console.log(hash); 
+
+        setLoading(false);
       }else{
         console.log("地址或金额错误");
       }
     }catch(e){
+      setLoading(false);
       console.log(e);
     }
 
@@ -214,14 +248,14 @@ export default function Index() {
         <h2 style={{fontSize:'20px'}}>zkSync Era批量转账ETH</h2>
         {mobilewidth ? 
         (<Box sx={{color:"#834bff",fontWeight:"bold"}}>收款合约地址:
-          <a href='https://explorer.zksync.io/address/0xe0AC8D30Fedf0D982e026921BC97f96220F8b0D5#contract'
+          <a href='https://goerli.explorer.zksync.io/address/0xFA8A78B9C8272Cec80D76868c02fdd1dbb7c63A1'
             target='_bank'
             style={{textDecoration:"none",color:"#834bff",fontWeight:"bold"}}
           >
             {viweaddress(contract)}</a>
         </Box>):
         (<Box sx={{color:"#834bff",fontWeight:"bold"}}>收款合约地址:
-          <a href='https://explorer.zksync.io/address/0xe0AC8D30Fedf0D982e026921BC97f96220F8b0D5#contract'
+          <a href='https://goerli.explorer.zksync.io/address/0xFA8A78B9C8272Cec80D76868c02fdd1dbb7c63A1'
             target='_bank'
             style={{textDecoration:"none",color:"#834bff",fontWeight:"bold"}}
           >
@@ -229,15 +263,16 @@ export default function Index() {
         </Box>)}
         <TextArea placeholder='收款地址,一行一个地址' 
           rows={10} 
-          className='transfer-address'
+          id='transfer-address'
           onChange={handleaddressChange}
           value={addresslist.join('\n')}
+          allowClear={true}
         />
         {!addressinput && <Box style={{ color: 'red',fontSize:"10px" }}>地址不能为空</Box>} {/* 当地址无效时显示错误提示 */}
         <Box sx={{width:"100%",display:"flex",justifyContent:"flex-start",alignItems:"center"}}>转账数量：
           <Input 
             placeholder="转账数量" 
-            className='transfer-math' 
+            id='transfer-amount' 
             value={value}
             onChange={handleChange}
             style={{
@@ -246,6 +281,7 @@ export default function Index() {
         </Box>
         <Button type="primary" 
           size="large"
+          loading={loading}
           onClick={handleTransferClick}
         >确认转账</Button>
       </Box>
