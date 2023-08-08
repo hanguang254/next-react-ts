@@ -13,6 +13,7 @@ import type { NotificationPlacement } from 'antd/es/notification/interface';
 
 import { useState,useEffect ,useRef} from 'react';
 import axios from 'axios';
+import { get } from 'http';
 
 const { TextArea } = Input;
 
@@ -28,13 +29,15 @@ declare global {
 
 export default function Index() {
   
-  const [value, setValue] = useState<any>(''); //金额
+  const [value, setValue] = useState<any>(''); //转账金额
   const [addresslist,setaddesslist]= useState([]); //地址数组
   const [amountlist,setamountlist]= useState<any>([]); //金额数组
+  const [depositvalue,setdepositvalue] = useState<any>(''); //存款数组
 
 
   const [addressinput,setaddressinput]= useState(true); //地址输入框是否为空
   const [amountinput,setamountinput]= useState<boolean>(true);//金额是否为空
+  const [depositinput,setdepositinput]= useState<boolean>(true);//存款是否为空
 
 
   const [transferhash,settransferhash] =useState<any>();//交易hash
@@ -42,7 +45,23 @@ export default function Index() {
 
   const [loading, setLoading] = useState<boolean>(false); //按钮加载状态
   const [addressfalse, setaddressfalse] = useState<boolean>(false); //地址错误提示
-  //金额输入框
+
+  
+  //合约地址
+  const contract = '0x2097636D692f6392dFFec40568adab0f604a35eb';
+
+  function getWallet(){
+    const web3provider = new Web3Provider(window.ethereum)
+    const wallet = web3provider.getSigner();
+    return wallet;
+  }
+  //钱包对象
+  function getContract(wallet:any){
+    const Trancontract = new Contract(contract,TranABI, wallet);
+    return Trancontract;
+  }
+
+  //转账输入框
   const handleChange = (event:any): void => {
     setamountinput(true);
     const inputValue = event.target.value;
@@ -50,6 +69,13 @@ export default function Index() {
     setValue(numericValue);
     
   };
+  //deposit输入框
+  const handledepositChange = (event:any): void => {
+    setdepositinput(true);
+    const inputValue = event.target.value;
+    const numericValue = inputValue.replace(/[^0-9.]/g, '');
+    setdepositvalue(numericValue);
+  }
 
   //地址输入框为数组
   const handleaddressChange = (event:any): void => {
@@ -124,8 +150,6 @@ export default function Index() {
     };
   },[])
 
-  //合约地址
-  const contract = '0x3B9fe8f1b19BBB6a2c5C0084f8D59bB0b1C487B1';
   // 处理合约地址两端显示
   const viweaddress = (contract:string)=>{
       if(mobilewidth){
@@ -196,15 +220,64 @@ export default function Index() {
     return  res.data;
   }
   
+  //deposit
+  async function deposit(){
+    const wallet = getWallet();
+    const Trancontract = getContract(wallet);
+    const gas ={
+      gasLimit: 1000000, 
+      gasPrice: ethers.utils.parseUnits('0.25', 'gwei'),
+      value: ethers.utils.parseUnits(depositvalue)
+    };
+    const deposit =await Trancontract.deposit(gas);
+    return deposit.hash;
+  }
+  const [depositLoading, setdepositLoading] = useState<boolean>(false); // deposit按钮加载状态
+  //deposit输入框是否为空
+  function isDepositValid(){
+    if(depositvalue.length === 0){
+      setdepositinput(false);
+    }
+  }
+  
+  //deposit点击事件
+  const handleDepositClick =async () => {
+    
+    try{
+        setdepositLoading(true);
+        isDepositValid();
+        if(depositinput){
+          const hash:any =await deposit();
+          const url = `https://goerli.explorer.zksync.io/tx/${hash}`;
+          console.log(hash); 
+          notification.open({
+            message: '存款通知',
+            description: <a href={url} target='_bank' style={{textDecoration:'none'}}>
+                      存款成功,点击查看详情！</a>,
+            icon: <SmileOutlined style={{ color: '#108ee9' }} />,
+          });
+        }else{
+          notification.open({
+            message: '存款通知',
+            description: "存款金额不能为空",
+            icon: <SmileOutlined style={{ color: '#108ee9' }} />,
+          });
+        }
+        setdepositLoading(false);
+    }catch(err:any){
+      setdepositLoading(false);
+      notification.open({
+        message: '存款通知',
+        description: err.message,
+        icon: <SmileOutlined style={{ color: '#108ee9' }} />,
+      });
+    }
+  }
 
   //转账函数 zksync-web3
   async function Transfer(){
-    
-    const web3provider = new Web3Provider(window.ethereum)
-    const wallet = web3provider.getSigner();
-
-    const Trancontract = new Contract(contract, TranABI, wallet);
-    // console.log(Trancontract)
+    const wallet = getWallet();
+    const Trancontract = getContract(wallet);
     const gas = {gasLimit: 3000000, gasPrice: ethers.utils.parseUnits('0.25', 'gwei')};
     const tx =await  Trancontract.transfer(addresslist,amountlist,gas);
     settransferhash(tx.hash)
@@ -225,14 +298,24 @@ export default function Index() {
 
         setLoading(false);
       }else{
-        console.log("地址或金额错误");
+        notification.open({
+          message: '转账通知',
+          description: "转账金额与地址不能为空",
+          icon: <SmileOutlined style={{ color: '#108ee9' }} />,
+        });
       }
-    }catch(e){
+    }catch(e:any){
       setLoading(false);
-      console.log(e);
+      notification.open({
+        message: '转账通知',
+        description: e.message,
+        icon: <SmileOutlined style={{ color: '#108ee9' }} />,
+      });
     }
 
   } 
+
+  const zksyncblock =`https://goerli.explorer.zksync.io/address/${contract}`;
   return (
     <Container maxWidth='md' sx={{height:"100%"}}>
       <Box sx={{
@@ -248,14 +331,14 @@ export default function Index() {
         <h2 style={{fontSize:'20px'}}>zkSync Era批量转账ETH</h2>
         {mobilewidth ? 
         (<Box sx={{color:"#834bff",fontWeight:"bold"}}>收款合约地址:
-          <a href='https://goerli.explorer.zksync.io/address/0xFA8A78B9C8272Cec80D76868c02fdd1dbb7c63A1'
+          <a href={zksyncblock}
             target='_bank'
             style={{textDecoration:"none",color:"#834bff",fontWeight:"bold"}}
           >
             {viweaddress(contract)}</a>
         </Box>):
         (<Box sx={{color:"#834bff",fontWeight:"bold"}}>收款合约地址:
-          <a href='https://goerli.explorer.zksync.io/address/0xFA8A78B9C8272Cec80D76868c02fdd1dbb7c63A1'
+          <a href={zksyncblock}
             target='_bank'
             style={{textDecoration:"none",color:"#834bff",fontWeight:"bold"}}
           >
@@ -269,21 +352,52 @@ export default function Index() {
           allowClear={true}
         />
         {!addressinput && <Box style={{ color: 'red',fontSize:"10px" }}>地址不能为空</Box>} {/* 当地址无效时显示错误提示 */}
-        <Box sx={{width:"100%",display:"flex",justifyContent:"flex-start",alignItems:"center"}}>转账数量：
-          <Input 
+        <Box sx={{width:"100%",display:"flex",justifyContent:'center',alignItems:"center"}}>
+          <Box>
+            存款:
+            <Input 
+              placeholder="存款数量" 
+              id='deposit-amount' 
+              value={depositvalue}
+              onChange={handledepositChange}
+              style={{
+              width:"80px" ,margin:"10px"}}  />
+          </Box>
+          <Box>
+            转账:
+            <Input 
             placeholder="转账数量" 
             id='transfer-amount' 
             value={value}
             onChange={handleChange}
             style={{
             width:"80px" ,margin:"10px"}}  />
-            {!amountinput && <Box style={{ color: 'red',fontSize:"10px" }}>金额不能为空</Box>} {/* 当为空时显示错误提示 */}
+            
+          </Box>
+          <Box>
+            {!amountinput && <Box style={{ color: 'red',fontSize:"10px" }}>转账金额不能为空</Box>} {/* 当为空时显示错误提示 */}
+          </Box>
         </Box>
-        <Button type="primary" 
-          size="large"
-          loading={loading}
-          onClick={handleTransferClick}
-        >确认转账</Button>
+        <Box sx={{
+          width:"100%",
+          display:"flex",
+          justifyContent:"center",
+          alignItems:"center",
+        }}>
+          <Button type="primary" 
+            size="large"
+            onClick={handleDepositClick}
+            loading={depositLoading}
+            style={{marginRight:"30px"}}
+          >存款</Button>
+          <Button type="primary" 
+            size="large"
+            style={{marginLeft:"30px"}}
+            loading={loading}
+            onClick={handleTransferClick}
+          >确认转账</Button>
+        </Box>
+        
       </Box>
     </Container>
   )
