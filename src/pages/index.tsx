@@ -101,6 +101,7 @@ export default function Index() {
   },[addressfalse])
 
   function isEthAddressValid() {
+    
     // 检查地址与金额是否为空
     if (addresslist.length === 0) {
       setaddressinput(false);
@@ -123,13 +124,12 @@ export default function Index() {
     }
 
     //金额数组
-    const valueBignumber = ethers.utils.parseUnits(value);
+    const valueBignumber= ethers.utils.parseEther(value);
     // 清空金额数组
     amountlist.splice(0,amountlist.length);
     for(let i =0;i<addresslist.length;i++){
       amountlist.push(valueBignumber.toString());
     }
-    
     console.log(addresslist,"金额",value,"金额数组",amountlist);
   }
 
@@ -222,15 +222,17 @@ export default function Index() {
   
   //deposit
   async function deposit(){
-    const wallet = getWallet();
-    const Trancontract = getContract(wallet);
-    const gas ={
-      gasLimit: 1000000, 
-      gasPrice: ethers.utils.parseUnits('0.25', 'gwei'),
-      value: ethers.utils.parseUnits(depositvalue)
-    };
-    const deposit =await Trancontract.deposit(gas);
-    return deposit.hash;
+      const wallet = getWallet();
+      const Trancontract = getContract(wallet);
+      const gas ={
+        gasLimit: 1000000, 
+        gasPrice: ethers.utils.parseUnits('0.25', 'gwei'),
+        value
+      };
+      gas.value = ethers.utils.parseUnits(depositvalue);
+      const deposit =await Trancontract.deposit(gas);
+      return deposit.hash;
+     
   }
   const [depositLoading, setdepositLoading] = useState<boolean>(false); // deposit按钮加载状态
   //deposit输入框是否为空
@@ -244,9 +246,9 @@ export default function Index() {
   const handleDepositClick =async () => {
     
     try{
-        setdepositLoading(true);
         isDepositValid();
         if(depositinput){
+          setdepositLoading(true);
           const hash:any =await deposit();
           const url = `https://goerli.explorer.zksync.io/tx/${hash}`;
           console.log(hash); 
@@ -256,6 +258,7 @@ export default function Index() {
                       存款成功,点击查看详情！</a>,
             icon: <SmileOutlined style={{ color: '#108ee9' }} />,
           });
+          setdepositLoading(false);
         }else{
           notification.open({
             message: '存款通知',
@@ -263,12 +266,12 @@ export default function Index() {
             icon: <SmileOutlined style={{ color: '#108ee9' }} />,
           });
         }
-        setdepositLoading(false);
     }catch(err:any){
+      console.log(err);
       setdepositLoading(false);
       notification.open({
         message: '存款通知',
-        description: err.message,
+        description: `请输入存款金额${err.message}`,
         icon: <SmileOutlined style={{ color: '#108ee9' }} />,
       });
     }
@@ -276,12 +279,13 @@ export default function Index() {
 
   //转账函数 zksync-web3
   async function Transfer(){
-    const wallet = getWallet();
-    const Trancontract = getContract(wallet);
-    const gas = {gasLimit: 3000000, gasPrice: ethers.utils.parseUnits('0.25', 'gwei')};
-    const tx =await  Trancontract.transfer(addresslist,amountlist,gas);
-    settransferhash(tx.hash)
-    return tx.hash;
+
+      const wallet = getWallet();
+      const Trancontract = getContract(wallet);
+      const gas = {gasLimit: 3000000, gasPrice: ethers.utils.parseUnits('0.25', 'gwei')};
+      const tx =await  Trancontract.transfer(addresslist,amountlist,gas);
+      settransferhash(tx.hash)
+      return tx.hash;
   
   }
 
@@ -308,7 +312,7 @@ export default function Index() {
       setLoading(false);
       notification.open({
         message: '转账通知',
-        description: e.message,
+        description: `请输入转账金额${e.message}`,
         icon: <SmileOutlined style={{ color: '#108ee9' }} />,
       });
     }
